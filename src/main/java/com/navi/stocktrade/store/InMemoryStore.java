@@ -1,20 +1,23 @@
 package com.navi.stocktrade.store;
 
-import com.navi.stocktrade.models.BuyOrder;
-import com.navi.stocktrade.models.BuyOrderComparator;
-import com.navi.stocktrade.models.SellOrder;
-import com.navi.stocktrade.models.SellOrderComparator;
+import com.navi.stocktrade.models.*;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeSet;
 
+@Slf4j
 public class InMemoryStore implements IStore{
 
     public TreeSet<BuyOrder> buyOrderTreeSet;
     public TreeSet<SellOrder> sellOrderTreeSet;
+    public List<Trade> tradeStore;
 
     public InMemoryStore() {
         this.buyOrderTreeSet = new TreeSet<>(new BuyOrderComparator());
         this.sellOrderTreeSet = new TreeSet<>(new SellOrderComparator());
+        this.tradeStore = new ArrayList<>();
     }
 
     @Override
@@ -25,10 +28,10 @@ public class InMemoryStore implements IStore{
     @Override
     public void print() {
         for(BuyOrder buyOrder: buyOrderTreeSet) {
-            System.out.printf(buyOrder.getTime()+"\n");
+            log.info("{}",buyOrder);
         }
         for(SellOrder sellOrder: sellOrderTreeSet) {
-            System.out.printf(sellOrder.getPrice()+"\n");
+            log.info("{}",sellOrder);
         }
     }
 
@@ -40,6 +43,16 @@ public class InMemoryStore implements IStore{
     @Override
     public TreeSet<SellOrder> getSellData() {
         return this.sellOrderTreeSet;
+    }
+
+    @Override
+    public void createTrade(Trade trade) {
+        this.tradeStore.add(trade);
+    }
+
+    @Override
+    public List<Trade> getTradeData() {
+        return this.tradeStore;
     }
 
     @Override

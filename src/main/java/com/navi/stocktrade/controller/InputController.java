@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,12 +41,29 @@ public class InputController implements Controller{
                 String[] tokens = line.split(" ");
                 Order order = this.parse(tokens);
                 this.orderService.placeOrder(order);
-                Trade trade = this.tradeService.trade(order);
-                if(Objects.nonNull(trade)){
-                    this.print(trade);
+
+                this.orderService.printDB();
+                log.info("--------");
+
+                //attempt a new trade
+                List<Trade> trades = this.tradeService.trade();
+                trades.sort(new Comparator<Trade>() {
+                    @Override
+                    public int compare(Trade o1, Trade o2) {
+                        String id1 = o1.getBuyId();
+                        String id2 = o2.getBuyId();
+                        return Integer.parseInt(String.valueOf(id1.charAt(1))) - Integer.parseInt(String.valueOf(id2.charAt(1)));
+                    }
+                });
+                for(Trade trade: trades) {
+                   log.info("{}",trade);
                 }
             }
+
+            //clear remaning trades
             this.orderService.printDB();
+            this.tradeService.completeRemainingTrades();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -53,7 +71,6 @@ public class InputController implements Controller{
 
     @Override
     public Order parse(String[] tokens) {
-        log.info("{}",tokens);
         Order order = Order.builder().
                 id(tokens[0]).
                 time(tokens[1]).

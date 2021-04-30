@@ -14,7 +14,7 @@ public class BuyOrderComparator implements Comparator<BuyOrder> {
             Date d1 = sdf.parse(b1.getTime());
             Date d2 = sdf.parse(b2.getTime());
 
-            return (int) (d2.getTime() - d1.getTime());
+            return (int) (d1.getTime() - d2.getTime());
         } catch (ParseException e) {
             e.printStackTrace();
         }

@@ -7,6 +7,8 @@ import com.navi.stocktrade.models.Trade;
 import com.navi.stocktrade.store.IStore;
 import com.navi.stocktrade.util.Constants;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeSet;
 
 public class TradeService implements ITradeService{
@@ -18,32 +20,44 @@ public class TradeService implements ITradeService{
     }
 
     @Override
-    public Trade trade(Order order) {
-        if(order.getOrderType().equals(Constants.BUY)) {
-            BuyOrder buyOrder = new BuyOrder(order.getId(), order.getTime(), order.getStock(), order.getPrice(), order.getQuantity());
-            return matchBuyOrder(buyOrder);
-        }
-        else {
-            SellOrder sellOrder = new SellOrder(order.getId(), order.getTime(), order.getStock(), order.getPrice(), order.getQuantity());
-            return matchSellOrder(sellOrder);
-        }
-    }
-
-    private Trade matchSellOrder(SellOrder sellOrder) {
+    public List<Trade> trade() {
+        List<Trade> tradeList = new ArrayList<>();
+        TreeSet<SellOrder> sellOrders = this.store.getSellData();
         TreeSet<BuyOrder> buyOrders = this.store.getBuyData();
-        if(buyOrders.isEmpty()) {
-            this.store.createSellOrder(sellOrder);
-        }
 
-        buyOrders.first()
+        if(buyOrders.isEmpty() || sellOrders.isEmpty())  return tradeList;
 
         for(BuyOrder buyOrder: buyOrders) {
-            if(sellOrder.getStock().equalsIgnoreCase(buyOrder.getStock()) && sellOrder.getQuantity() > buyOrder.getQuantity()) {
-                this.store.createSellOrder(sellOrder);
+            if(buyOrder.getQuantity() == 0) continue;
+            boolean traded = false;
+            for(SellOrder sellOrder: sellOrders) {
+                //move on if diff stock
+                if(!sellOrder.getStock().equalsIgnoreCase(buyOrder.getStock()) || sellOrder.getQuantity() == 0 || sellOrder.getPrice() > buyOrder.getPrice()) continue;
+
+                int tradedQuantity = 0;
+                if(sellOrder.getQuantity() < buyOrder.getQuantity()) {
+                    tradedQuantity = sellOrder.getQuantity();
+                    sellOrder.setQuantity(0);
+                    buyOrder.setQuantity(buyOrder.getQuantity() - tradedQuantity);
+                }
+
+                Trade trade = new Trade(buyOrder.getId(), sellOrder.getPrice(), tradedQuantity, sellOrder.getId());
+                tradeList.add(trade);
+                this.store.createTrade(trade);
+                traded = true;
+                break;
             }
+
+            if(traded) break;
+
         }
+
+        return tradeList;
     }
 
-    private Trade matchBuyOrder(BuyOrder buyOrder) {
+    @Override
+    public List<Trade> completeRemainingTrades() {
+        List<Trade> tradeList = new ArrayList<>();
+        return tradeList;
     }
 }
